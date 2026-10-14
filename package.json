@@ -10,7 +10,8 @@
     "typecheck": "tsc -b",
     "icons": "pwa-assets-generator",
     "catalog": "node scripts/import-catalog.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "photos": "node scripts/generate-photos.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",

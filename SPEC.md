@@ -263,6 +263,22 @@ Each item has:
   or a supplier's **written** permission. Never copy photos from supplier
   websites without permission (copyright; Israeli law allows statutory damages
   per photo).
+- Decided 2026-10-14: the supplier (Buki Flowers) refused permission and the
+  user won't photograph items herself, so built-in pictures are **AI-generated**
+  with the OpenAI Images API (commercial use allowed; label them as
+  illustrations, not "photos of our flowers"). The supplier's site may be looked
+  at only to recognise what a plant is — never downloaded or used as a reference
+  image for generation.
+  - `data/photo-prompts.xlsx`: one row per item of the user's price list (Google
+    Sheet "Bouquet Calculator Prices"), with the picture it uses and an English
+    description; similar items share a picture (roses 50–80 cm, monstera sizes…).
+    Status `check` = plant not confirmed yet, skipped.
+  - `npm run photos` (scripts/generate-photos.mjs) generates the missing pictures
+    into `generated-photos/` (git-ignored) in one style: single stem, pure white
+    background, soft studio light. The API key lives in `.env.local`
+    (git-ignored), put there by the user.
+  - Still to do: review the pictures, then shrink them and add them to the app
+    together with the new catalog built from her price list.
 
 ## 11. Decisions
 

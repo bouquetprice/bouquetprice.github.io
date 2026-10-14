@@ -16,6 +16,12 @@ my-prices*.xlsx
 bouquet-prices-*.xlsx
 bouquet-calculator-backup-*.json
 
+# OpenAI API key for generating catalog pictures — never publish
+.env.local
+
+# Generated catalog pictures, kept until they are reviewed and added to the app
+generated-photos/
+
 # Build caches
 *.tsbuildinfo
 
