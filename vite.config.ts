@@ -22,6 +22,14 @@ export default defineConfig({
         // downloaded and cached on first use of on-device recognition instead.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        // Catalog pictures are kept once seen, so they show without a connection too.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/photos/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'catalog-pictures', expiration: { maxEntries: 400 } },
+          },
+        ],
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {

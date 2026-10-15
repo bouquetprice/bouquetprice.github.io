@@ -1,5 +1,5 @@
 // Generates catalog pictures with the OpenAI Images API from data/photo-prompts.xlsx.
-// All pictures share one look: a single stem on a pure white background, soft studio light.
+// All pictures share one look: framed close on a pure white background, soft studio light.
 //
 //   npm run photos -- --limit 5            try 5 new pictures first
 //   npm run photos                         everything not generated yet
@@ -38,11 +38,13 @@ const quality = option('quality', 'medium');
 const force = flag('force');
 const dryRun = flag('dry-run');
 
+// Framed close: in the app the pictures are small tiles and round thumbnails, so the
+// flower (or leaf) must fill most of the frame, with only a short piece of stem.
 const prompt = (subject) =>
-  `Professional studio product photograph for a florist's catalogue: ${subject}. ` +
-  'Isolated on a pure white seamless background, soft even diffused lighting, a very faint natural shadow beneath, ' +
-  'centred, the whole stem visible with some space around it, photorealistic, true-to-life colours, sharp focus. ' +
-  'No vase, no wrapping, no hands, no text, no watermark.';
+  `Close-up studio product photograph for a florist's catalogue: ${subject}. ` +
+  'The flower head or foliage fills most of the square frame, with only a short piece of stem showing at the bottom. ' +
+  'Centred on a pure white seamless background, soft even diffused lighting, a very faint natural shadow, ' +
+  'photorealistic, true-to-life colours, sharp focus. No vase, no wrapping, no hands, no text, no watermark.';
 
 function apiKey() {
   if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY.trim();

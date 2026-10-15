@@ -19,6 +19,7 @@ export function mergeItem(base: CatalogItem | undefined, override: ItemOverride 
     fixedSalePrice: override?.fixedSalePrice ?? base?.fixedSalePrice,
     hidden: override?.hidden ?? false,
     photoId: override?.photoId,
+    photo: base?.photo,
     group: base?.group,
     priceRule: base?.priceRule,
   };

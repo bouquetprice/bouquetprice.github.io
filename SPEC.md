@@ -277,8 +277,16 @@ Each item has:
     into `generated-photos/` (git-ignored) in one style: single stem, pure white
     background, soft studio light. The API key lives in `.env.local`
     (git-ignored), put there by the user.
-  - Still to do: review the pictures, then shrink them and add them to the app
-    together with the new catalog built from her price list.
+  - Pictures are framed close (the flower or leaf fills most of the frame, short
+    stem), because in the app they are small tiles and round thumbnails.
+  - `npm run photos:app` (scripts/photos-to-app.mjs) shrinks the chosen pictures
+    to 640 px WebP in `public/photos/` and lists them in `src/data/photos.json`
+    (catalog item ID → picture). The app shows the florist's own photo first,
+    else the built-in picture, else the letter tile. Pictures are cached by the
+    service worker once seen, so they work offline.
+  - v0.9.0: first 5 pictures in the app for the user to judge (rose, hydrangea,
+    gypsophila, eucalyptus cinerea, monstera). The rest follows once she
+    approves, together with the new catalog built from her price list.
 
 ## 11. Decisions
 

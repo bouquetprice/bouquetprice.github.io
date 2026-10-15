@@ -34,6 +34,8 @@ export interface CatalogItem {
   purchasePrice?: number;
   multiplier?: number;
   fixedSalePrice?: number;
+  /** Built-in picture (an AI-generated illustration), path relative to the app's address. */
+  photo?: string;
 }
 
 /** The florist's data for one item: changes to a built-in item, or a whole custom item. */
@@ -71,6 +73,8 @@ export interface Item {
   fixedSalePrice?: number;
   hidden: boolean;
   photoId?: string;
+  /** Built-in picture, shown when the florist hasn't added a photo of her own. */
+  photo?: string;
   group?: string;
   priceRule?: AverageOfGroup;
 }
