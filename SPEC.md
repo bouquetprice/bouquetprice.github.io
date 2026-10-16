@@ -218,7 +218,10 @@ Each item has:
 - **Catalog** (separate tab, view only): every item with its **photo** and
   **sale price** (per stem), with search and a flowers / greenery filter, so
   anyone in the shop can quickly look up a price. No purchase prices or
-  multipliers here.
+  multipliers here. Tapping an item opens a card floating over the dimmed
+  catalog (v0.9.1, the user's choice of three mockups): big picture, name,
+  other names, sale price and an "Edit price" button that opens the item's
+  price card. Tap outside or × closes it.
 - **Price table** (separate tab, editing): purchase prices, bought as stem /
   bunch, stems per bunch, multipliers, fixed sale prices, names in every
   language, photos, adding / hiding items, Excel export / import.
