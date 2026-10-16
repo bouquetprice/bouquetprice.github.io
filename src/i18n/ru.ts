@@ -111,6 +111,7 @@ export const ru: Messages = {
   catalog: {
     searchPlaceholder: 'Поиск по названию',
     noResults: 'Ничего не найдено.',
+    editPrice: 'Исправить цену',
   },
   prices: {
     multipliers: 'Коэффициенты',

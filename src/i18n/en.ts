@@ -99,6 +99,7 @@ export const en = {
   catalog: {
     searchPlaceholder: 'Search by name',
     noResults: 'Nothing found.',
+    editPrice: 'Edit price',
   },
   prices: {
     multipliers: 'Multipliers',

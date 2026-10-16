@@ -101,6 +101,7 @@ export const he: Messages = {
   catalog: {
     searchPlaceholder: 'חיפוש לפי שם',
     noResults: 'לא נמצא דבר.',
+    editPrice: 'עריכת מחיר',
   },
   prices: {
     multipliers: 'מכפילים',

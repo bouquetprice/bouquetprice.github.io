@@ -1,15 +1,16 @@
 // Price lookup for anyone in the shop (SPEC §10): photos and sale prices only.
 
 import { useMemo, useState } from 'react';
+import { ItemCard } from '../components/ItemCard';
 import { ItemPhoto } from '../components/ItemPhoto';
 import { SearchBar } from '../components/SearchBar';
-import { Sheet } from '../components/Sheet';
 import { useI18n } from '../i18n';
 import { displayName, searchText } from '../model/items';
 import { salePricePerPack, salePricePerStem } from '../model/pricing';
 import type { Category, Item } from '../model/types';
 import { useAppStore } from '../store/AppStore';
 import { useMoney } from '../useMoney';
+import { ItemEditor } from './ItemEditor';
 
 export type CategoryFilter = 'all' | Category;
 
@@ -44,6 +45,7 @@ export function CatalogScreen() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [opened, setOpened] = useState<Item | null>(null);
+  const [editing, setEditing] = useState<Item | null>(null);
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -95,26 +97,29 @@ export function CatalogScreen() {
         )}
       </div>
 
-      {opened && (
-        <Sheet title={displayName(opened, locale)} onClose={() => setOpened(null)}>
-          <div className="item-details">
-            <ItemPhoto item={opened} size="large" />
-            <p className="details-price">
-              {(() => {
-                const perStem = salePricePerStem(opened, items, settings);
-                if (perStem != null) return `${money(perStem)} ${t.common.perStem}`;
-                const perPack = salePricePerPack(opened, items, settings);
-                return perPack == null ? t.common.noPrice : `${money(perPack)} ${t.common.perPack}`;
-              })()}
-            </p>
-            <ul className="details-names">
-              {opened.names.he && <li dir="rtl">{opened.names.he}</li>}
-              {opened.names.ru && <li>{opened.names.ru}</li>}
-              {opened.names.en && <li>{opened.names.en}</li>}
-            </ul>
-          </div>
-        </Sheet>
-      )}
+      {opened &&
+        (() => {
+          const perStem = salePricePerStem(opened, items, settings);
+          const perPack = perStem == null ? salePricePerPack(opened, items, settings) : null;
+          const price =
+            perStem != null
+              ? { amount: money(perStem), unit: t.common.perStem }
+              : perPack != null
+                ? { amount: money(perPack), unit: t.common.perPack }
+                : null;
+          return (
+            <ItemCard
+              item={opened}
+              price={price}
+              onClose={() => setOpened(null)}
+              onEditPrice={() => {
+                setOpened(null);
+                setEditing(opened);
+              }}
+            />
+          );
+        })()}
+      {editing && <ItemEditor item={editing} isNew={false} onClose={() => setEditing(null)} />}
     </div>
   );
 }

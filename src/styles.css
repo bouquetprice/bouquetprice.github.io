@@ -986,24 +986,105 @@ ul {
   font-size: 18px;
 }
 
-.item-details {
+/* Catalog item card: floats over the dimmed catalog (variant C, chosen by the user). */
+.item-card-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.45);
 }
 
-.details-price {
-  font-size: 28px;
-  font-weight: 300;
-  text-align: center;
-}
-
-.details-names {
+.item-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: card-in 200ms ease-out;
+}
+
+@keyframes card-in {
+  from {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-card {
+    animation: none;
+  }
+}
+
+.item-card-photo {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.item-card .item-photo-large {
+  max-width: none;
+  border-radius: 0;
+}
+
+/* Without a picture, a lower letter tile is enough. */
+.item-card .item-photo-empty {
+  aspect-ratio: 2 / 1;
+}
+
+.item-card-close {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 253, 249, 0.92);
   color: var(--text-muted);
-  text-align: center;
+}
+
+.item-card-body {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 22px;
+}
+
+.item-card-name {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.item-card-other {
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+.item-card-price {
+  margin-block: 16px 20px;
+  font-size: 16px;
+}
+
+.item-card-amount {
+  font-size: 38px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.item-card-price.no-price {
+  font-size: 22px;
 }
 
 /* Prices */

@@ -10,10 +10,11 @@ interface SheetProps {
   tall?: boolean;
 }
 
-/** A panel that slides over the screen (item editor, item picker, item details). */
-export function Sheet({ title, onClose, children, footer, tall }: SheetProps) {
-  const { t } = useI18n();
-
+/**
+ * While something covers the screen: the page under it doesn't scroll or switch tabs by
+ * swiping, updates wait (pwaUpdate.ts), and Escape closes it.
+ */
+export function useOverlay(onClose: () => void) {
   useEffect(() => {
     document.body.classList.add('has-sheet');
     const onKey = (event: KeyboardEvent) => {
@@ -25,6 +26,12 @@ export function Sheet({ title, onClose, children, footer, tall }: SheetProps) {
       window.removeEventListener('keydown', onKey);
     };
   }, [onClose]);
+}
+
+/** A panel that slides over the screen (item editor, item picker). */
+export function Sheet({ title, onClose, children, footer, tall }: SheetProps) {
+  const { t } = useI18n();
+  useOverlay(onClose);
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -48,7 +55,7 @@ export function Sheet({ title, onClose, children, footer, tall }: SheetProps) {
   );
 }
 
-function CloseIcon() {
+export function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M6 6l12 12M18 6L6 18" />
