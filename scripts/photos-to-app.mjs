@@ -1,45 +1,34 @@
-// Puts reviewed generated pictures into the app as the catalog's built-in pictures.
+// Puts the generated pictures into the app.
 //
-//   npm run photos:app
+//   npm run photos:app      (then npm run catalog, which links items to these pictures)
 //
-// For every catalog item listed in CATALOG_PICTURES below, takes generated-photos/<picture>.jpg,
-// shrinks it to a small WebP in public/photos/ and records it in src/data/photos.json
-// (catalog item ID → picture path). The florist's own photo still wins over these in the app.
-// Pictures are AI-generated illustrations (see SPEC §10a).
+// Every generated-photos/<picture>.jpg becomes a small WebP in public/photos/<picture>.webp.
+// Pictures no longer generated are removed from public/photos/. They are AI-generated
+// illustrations (see SPEC §10a); the florist's own photo still wins over them in the app.
 
 import sharp from 'sharp';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 
-/**
- * Catalog item ID → picture name (the Image column of data/photo-prompts.xlsx).
- * For now the current catalog's IDs, mapped by hand; it will come from the price list
- * once the catalog is rebuilt from it.
- */
-const CATALOG_PICTURES = {
-  rose: 'rose',
-  hydrangea: 'hydrangea',
-  gypsophila: 'gypsophila',
-  'eucalyptus-cinerea': 'eucalyptus-silver-dollar',
-  monstera: 'monstera-leaf',
-};
-
+const SOURCE = 'generated-photos';
+const OUT_DIR = 'public/photos';
 /** Big enough for the catalog card on a phone screen, small enough to load fast. */
 const SIZE = 640;
-const OUT_DIR = 'public/photos';
-const MAP = 'src/data/photos.json';
 
-mkdirSync(OUT_DIR, { recursive: true });
-const photos = {};
-const missing = [];
-for (const [itemId, picture] of Object.entries(CATALOG_PICTURES)) {
-  const source = `generated-photos/${picture}.jpg`;
-  if (!existsSync(source)) {
-    missing.push(picture);
-    continue;
-  }
-  await sharp(source).resize(SIZE, SIZE, { fit: 'cover' }).webp({ quality: 80 }).toFile(`${OUT_DIR}/${picture}.webp`);
-  photos[itemId] = `photos/${picture}.webp`;
+if (!existsSync(SOURCE)) {
+  console.error(`No ${SOURCE}/ folder: generate pictures first (npm run photos).`);
+  process.exit(1);
 }
-writeFileSync(MAP, `${JSON.stringify(photos, null, 2)}\n`);
-console.log(`${Object.keys(photos).length} pictures in the app (${MAP}).`);
-if (missing.length) console.log(`Not generated yet: ${missing.join(', ')}`);
+mkdirSync(OUT_DIR, { recursive: true });
+const pictures = readdirSync(SOURCE)
+  .filter((file) => file.endsWith('.jpg') && !file.startsWith('trial'))
+  .map((file) => file.slice(0, -'.jpg'.length));
+
+for (const picture of pictures) {
+  await sharp(`${SOURCE}/${picture}.jpg`)
+    .resize(SIZE, SIZE, { fit: 'cover' })
+    .webp({ quality: 80 })
+    .toFile(`${OUT_DIR}/${picture}.webp`);
+}
+const removed = readdirSync(OUT_DIR).filter((file) => file.endsWith('.webp') && !pictures.includes(file.slice(0, -5)));
+for (const file of removed) rmSync(`${OUT_DIR}/${file}`);
+console.log(`${pictures.length} pictures in ${OUT_DIR}/${removed.length ? `; removed ${removed.length} old ones` : ''}.`);

@@ -287,9 +287,18 @@ Each item has:
     (catalog item ID → picture). The app shows the florist's own photo first,
     else the built-in picture, else the letter tile. Pictures are cached by the
     service worker once seen, so they work offline.
-  - v0.9.0: first 5 pictures in the app for the user to judge (rose, hydrangea,
-    gypsophila, eucalyptus cinerea, monstera). The rest follows once she
-    approves, together with the new catalog built from her price list.
+  - v0.9.0: first 5 pictures in the app for the user to judge.
+  - v1.0.0: all 150 pictures in the app (176 of 180 items; 4 plants still to be
+    confirmed have none). `npm run catalog` links each item to its picture.
+- **New catalog (v1.0.0, decided 2026-10-16):** the built-in catalog is now the
+  user's price list (Google Sheet "Bouquet Calculator Prices", saved as
+  `data/price-list.tsv`): 178 items with names in he/ru/en, default purchase
+  prices and stems per bunch. The old 85-item catalog is gone; the user didn't
+  need her old price changes kept. 40 old items keep their IDs and old names as
+  spoken aliases (`data/catalog-ids.json`, `data/spoken-names.json`), so
+  dictation still understands e.g. "הורטנזיה" (now "הורטנזיה יבוא") or "עופרים".
+  Two extra items exist only for dictation without a length: "ורד" and
+  "ורד ספרי", priced at the average of their 50–80 cm items.
 
 ## 11. Decisions
 

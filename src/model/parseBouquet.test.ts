@@ -80,10 +80,17 @@ describe('parseBouquet', () => {
     expect(bouquetOf('כל הירוק 40').lumps).toEqual({ greenery: 40 });
   });
 
-  it('tells spray chrysanthemum from single-head', () => {
-    expect(bouquetOf('חמש חרציות ושלוש חרצית ראש').lines).toEqual({
+  it('tells spray chrysanthemum from imported chrysanthemum', () => {
+    expect(bouquetOf('חמש חרציות ושלוש חרצית יבוא').lines).toEqual({
       'chrysanthemum-spray-extra': 5,
-      'chrysanthemum-disbud': 3,
+      'imported-chrysanthemum': 3,
+    });
+  });
+
+  it('reads the full names from the price list', () => {
+    expect(bouquetOf('שתי מונסטרה גדול, שלוש אקליפטוס מטבעות').lines).toEqual({
+      'monstera-leaf-large': 2,
+      'eucalyptus-cinerea': 3,
     });
   });
 

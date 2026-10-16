@@ -3,7 +3,6 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import catalogData from '../data/catalog.json';
-import builtInPhotos from '../data/photos.json';
 import { mergeItems } from '../model/items';
 import { DEFAULT_SETTINGS, type CatalogItem, type Item, type ItemOverride, type Settings } from '../model/types';
 import {
@@ -18,11 +17,7 @@ import {
 import { cachePhotoUrl, newPhotoId, shrinkPhoto } from './photos';
 import { backupNeeded, loadBackupStatus, saveBackupStatus, SNOOZE_MS, type BackupStatus } from './backupStatus';
 
-/** The built-in catalog, with its pictures (npm run photos:app). */
-export const CATALOG = (catalogData as CatalogItem[]).map((item) => {
-  const photo = (builtInPhotos as Record<string, string>)[item.id];
-  return photo ? { ...item, photo } : item;
-});
+export const CATALOG = catalogData as CatalogItem[];
 
 /** Fields to change; a field set to undefined is cleared (back to the catalog / default value). */
 export type ItemPatch = { [K in keyof Omit<ItemOverride, 'id'>]?: ItemOverride[K] | undefined };

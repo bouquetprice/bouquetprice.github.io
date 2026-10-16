@@ -14,15 +14,22 @@ npm run build      # type-check and production build (includes the service worke
 npm run preview    # serve the production build on http://localhost:4173
 npm run icons      # regenerate PNG icons from public/favicon.svg
 npm test           # unit tests (phrase parsing, pricing)
-npm run catalog    # rebuild src/data/catalog.json from data/catalog-draft.xlsx
+npm run photos     # generate missing catalog pictures (OpenAI; key in .env.local)
+npm run photos:app # shrink generated pictures into public/photos/
+npm run catalog    # rebuild src/data/catalog.json from data/price-list.tsv
 ```
 
 ## Data
 
-- `data/catalog-draft.xlsx` — built-in catalog (names in he/ru/en, no prices). Edit it, then run `npm run catalog`.
-- `private/my-prices.xlsx` — the price table used as **default prices** in the app
-  (`npm run catalog` builds them into `src/data/catalog.json`, which is public).
-  The folder itself (invoices, working copies) is git-ignored.
+- `data/price-list.tsv` — the built-in catalog with **default prices**: the Google Sheet
+  "Bouquet Calculator Prices" downloaded as TSV (Hebrew, Russian, English, Price, Bought as;
+  section rows Flowers / Roses / Greenery). Replace it and run `npm run catalog`; the result,
+  `src/data/catalog.json`, is public.
+- `data/catalog-ids.json` — keeps each item's ID stable (Hebrew name → ID);
+  `data/spoken-names.json` — extra names people say out loud, per item ID.
+- `data/photo-prompts.xlsx` — the picture for every price-list row and what to draw;
+  `generated-photos/` (git-ignored) holds the generated originals.
+- `private/` — invoices and working copies, git-ignored.
 
 ## Publishing
 

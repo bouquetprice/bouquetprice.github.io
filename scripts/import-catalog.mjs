@@ -1,137 +1,142 @@
-// Converts the reviewed catalog spreadsheet (and the default price table) into the
-// app's built-in catalog.
+// Builds the app's built-in catalog from the florist's price list.
 //
-//   npm run catalog [catalog.xlsx] [prices.xlsx]
-//     defaults: data/catalog-draft.xlsx and private/my-prices.xlsx → src/data/catalog.json
+//   npm run catalog
+//     data/price-list.tsv (+ pictures named in data/photo-prompts.xlsx) → src/data/catalog.json
 //
-// Catalog sheet "Catalog" (by header name):
-//   ID, Category, Hebrew, Russian, English, Other spoken names, Bought as
-// Rows without an ID get one generated from the English (or Russian / Hebrew) name.
+// data/price-list.tsv is the Google Sheet "Bouquet Calculator Prices" downloaded as TSV
+// (File → Download → Tab-separated values), with the columns
+//   Hebrew, Russian, English, Price, Bought as ("stem" or "bunch <stems>").
+// Rows without a price are section titles: "Flowers", "Roses", "Greenery" (greenery
+// items get the greenery multiplier, the rest the flower one). " (?)" — a plant still
+// to be confirmed — is dropped from names.
 //
-// Price sheet "My prices" (header row starts with "ID"; same layout as the app's
-// Excel export): Purchase price (₪), Stems per bunch, Own multiplier,
-// Fixed sale price per stem (₪). These become the default prices every new
-// florist starts with; a florist's own prices always win in the app.
+// Item IDs are kept in data/catalog-ids.json (Hebrew name → ID), so an item keeps its ID
+// (and the florist's own prices for it) when names are edited; new rows get an ID from
+// their English name. data/spoken-names.json adds other names people say out loud
+// (ID → names), e.g. the old catalog's names, so dictation keeps understanding them.
+// Each item gets the picture its row names in data/photo-prompts.xlsx (by sheet row),
+// if that picture is in public/photos/ (npm run photos:app).
 // Note: the built catalog is public (it ships in the app and in the repository).
 
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readSheet } from 'read-excel-file/node';
-import { existsSync, writeFileSync } from 'node:fs';
 
-const INPUT = process.argv[2] ?? 'data/catalog-draft.xlsx';
-const PRICES = process.argv[3] ?? 'private/my-prices.xlsx';
+const INPUT = 'data/price-list.tsv';
+const IDS = 'data/catalog-ids.json';
+const SPOKEN = 'data/spoken-names.json';
 const OUTPUT = 'src/data/catalog.json';
+const PROMPTS = 'data/photo-prompts.xlsx';
 
-/** Standard rose varieties: a plain "rose" is priced at their average. */
-const GROUPS = {
-  rose: ['rose-avalanche', 'rose-revival', 'rose-milva', 'rose-cool-water'],
-};
-const AVERAGE_ITEMS = { rose: 'rose' };
+/**
+ * Plain items for dictation ("five roses" without a length): priced at the average of a group.
+ * Their group is every item whose Hebrew name matches `members`.
+ */
+const AVERAGED = [
+  {
+    before: 'ורד 50 ס"מ',
+    item: { id: 'rose', category: 'flower', names: { he: 'ורד', ru: 'Роза', en: 'Rose' } },
+    picture: 'rose',
+    members: /^ורד \d+ ס"מ$/,
+  },
+  {
+    before: 'ורד ספרי 50 ס"מ',
+    item: { id: 'spray-rose', category: 'flower', names: { he: 'ורד ספרי', ru: 'Роза кустовая', en: 'Spray rose' } },
+    picture: 'rose-spray',
+    members: /^ורד ספרי \d+ ס"מ$/,
+  },
+];
 
-const GREENERY_WORDS = ['greenery', 'green', 'зелень', 'ירוק', 'ירק'];
+const read = (path, fallback) => (existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : fallback);
+const idsByHebrew = read(IDS, {});
+const spokenNames = read(SPOKEN, {});
 
-function text(value) {
-  return value == null ? '' : String(value).trim();
-}
-
-function slug(value) {
-  return value
+const clean = (value) => (value ?? '').replace(/\s*\(\?\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+const slug = (value) =>
+  value
     .toLowerCase()
     .normalize('NFKD')
+    .replace(/['’"«»]/g, '')
     .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
     .replace(/^-+|-+$/g, '');
-}
 
-const rows = await readSheet(INPUT, 'Catalog');
-const header = rows[0].map(text);
-const column = (name) => {
-  const index = header.findIndex((title) => title.toLowerCase() === name.toLowerCase());
-  if (index < 0) throw new Error(`Missing column "${name}"`);
+// Sheet row number → picture name.
+const pictureOfRow = new Map();
+if (existsSync(PROMPTS)) {
+  const sheet = await readSheet(PROMPTS, 'Photos');
+  const titles = sheet[0].map((title) => String(title ?? '').toLowerCase());
+  const rowAt = titles.indexOf('row');
+  const imageAt = titles.indexOf('image');
+  for (const line of sheet.slice(1)) if (line[rowAt] && line[imageAt]) pictureOfRow.set(Number(line[rowAt]), String(line[imageAt]));
+}
+const photo = (picture) => (picture && existsSync(`public/photos/${picture}.webp`) ? `photos/${picture}.webp` : undefined);
+
+const rows = readFileSync(INPUT, 'utf8')
+  .split('\n')
+  .map((line, index) => Object.assign(line.split('\t').map((cell) => cell.trim()), { sheetRow: index + 1 }))
+  .filter((cells) => cells.some(Boolean));
+const header = rows[0].map((title) => title.toLowerCase());
+const col = (name) => {
+  const index = header.findIndex((title) => title.startsWith(name));
+  if (index < 0) throw new Error(`Missing column "${name}" in ${INPUT}`);
   return index;
 };
-const col = {
-  id: column('ID'),
-  category: column('Category'),
-  he: column('Hebrew'),
-  ru: column('Russian'),
-  en: column('English'),
-  aliases: column('Other spoken names'),
-  boughtAs: header.findIndex((title) => /^(bought as|unit)$/i.test(title)),
-};
+const [heCol, ruCol, enCol, priceCol, boughtCol] = ['hebrew', 'russian', 'english', 'price', 'bought'].map(col);
 
-function number(value) {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  const parsed = Number(text(value).replace(',', '.'));
-  return text(value) && Number.isFinite(parsed) ? parsed : undefined;
-}
-
-/** Default prices by item ID, from the price table (if there is one). */
-async function readDefaultPrices(path) {
-  if (!existsSync(path)) return new Map();
-  const sheet = await readSheet(path, 'My prices');
-  const headerRow = sheet.findIndex((row) => text(row[0]).toLowerCase() === 'id');
-  if (headerRow < 0) throw new Error(`No "ID" header in ${path}`);
-  const titles = sheet[headerRow].map((cell) => text(cell).toLowerCase());
-  const at = (title) => titles.indexOf(title.toLowerCase());
-  const columns = {
-    purchasePrice: at('Purchase price (₪)'),
-    stemsPerBunch: at('Stems per bunch'),
-    multiplier: at('Own multiplier'),
-    fixedSalePrice: at('Fixed sale price per stem (₪)'),
-  };
-  const prices = new Map();
-  for (const row of sheet.slice(headerRow + 1)) {
-    const id = text(row[0]);
-    if (!id) continue;
-    const entry = {};
-    for (const [field, index] of Object.entries(columns)) {
-      const value = index >= 0 ? number(row[index]) : undefined;
-      if (value != null) entry[field] = value;
-    }
-    if (Object.keys(entry).length) prices.set(id, entry);
-  }
-  return prices;
-}
-
-const defaultPrices = await readDefaultPrices(PRICES);
-const groupOf = new Map(Object.entries(GROUPS).flatMap(([group, ids]) => ids.map((id) => [id, group])));
+const usedIds = new Set(Object.values(idsByHebrew));
+const builtIds = new Set();
 const items = [];
-const seen = new Set();
+let category = 'flower';
 
 for (const row of rows.slice(1)) {
-  const names = {};
-  for (const language of ['he', 'ru', 'en']) {
-    const value = text(row[col[language]]);
-    if (value) names[language] = value;
+  const price = Number((row[priceCol] ?? '').replace(',', '.'));
+  if (!row[priceCol]) {
+    // A section title.
+    category = /greenery|зелень|ירק/i.test(row.join(' ')) ? 'greenery' : 'flower';
+    continue;
   }
-  if (!names.he && !names.ru && !names.en) continue;
+  const names = {};
+  for (const [language, index] of [['he', heCol], ['ru', ruCol], ['en', enCol]]) {
+    const name = clean(row[index]);
+    if (name) names[language] = name;
+  }
 
-  let id = text(row[col.id]) || slug(names.en ?? names.ru ?? names.he);
-  while (seen.has(id)) id += '-2';
-  seen.add(id);
+  // Two rows may share a Hebrew name (e.g. פמפס, the flower and the leaves): tell them apart by English.
+  const idKey = builtIds.has(idsByHebrew[names.he]) ? `${names.he} | ${names.en ?? names.ru}` : names.he;
+  let id = idsByHebrew[idKey];
+  if (!id) {
+    const base = slug(names.en ?? names.ru ?? names.he);
+    id = base;
+    for (let n = 2; usedIds.has(id); n++) id = `${base}-${n}`;
+    usedIds.add(id);
+    idsByHebrew[idKey] = id;
+  }
+  builtIds.add(id);
 
-  const category = GREENERY_WORDS.some((word) => text(row[col.category]).toLowerCase().includes(word))
-    ? 'greenery'
-    : 'flower';
-  const boughtAsText = col.boughtAs >= 0 ? text(row[col.boughtAs]).toLowerCase() : '';
-  const aliases = text(row[col.aliases])
-    .split(/[;,]/)
-    .map((alias) => alias.trim())
-    .filter(Boolean);
+  const averaged = AVERAGED.find((entry) => entry.before === names.he);
+  if (averaged) {
+    const plain = { ...averaged.item, aliases: [], boughtAs: 'stem', priceRule: { averageOfGroup: averaged.item.id } };
+    if (photo(averaged.picture)) plain.photo = photo(averaged.picture);
+    items.push(plain);
+  }
 
-  const item = {
-    id,
-    category,
-    names,
-    aliases,
-    boughtAs: /bunch|pack|пуч|упаков|צרור|חביל/.test(boughtAsText) ? 'bunch' : 'stem',
-  };
-  if (groupOf.has(id)) item.group = groupOf.get(id);
-  const averaged = Object.entries(AVERAGE_ITEMS).find(([, itemId]) => itemId === id);
-  if (averaged) item.priceRule = { averageOfGroup: averaged[0] };
-  Object.assign(item, defaultPrices.get(id));
+  const bunch = /bunch\s*(\d+)/i.exec(row[boughtCol] ?? '');
+  const item = { id, category, names, aliases: [], boughtAs: bunch ? 'bunch' : 'stem' };
+  const group = AVERAGED.find((entry) => entry.members.test(names.he));
+  if (group) item.group = group.item.id;
+  if (bunch) item.stemsPerBunch = Number(bunch[1]);
+  item.purchasePrice = price;
+  if (photo(pictureOfRow.get(row.sheetRow))) item.photo = photo(pictureOfRow.get(row.sheetRow));
   items.push(item);
 }
 
-writeFileSync(OUTPUT, JSON.stringify(items, null, 2) + '\n');
-const priced = items.filter((item) => item.purchasePrice != null || item.fixedSalePrice != null).length;
-console.log(`${items.length} items (${priced} with default prices) → ${OUTPUT}`);
+// Other spoken names, without repeating the item's own names.
+for (const item of items) {
+  const own = new Set(Object.values(item.names).map((name) => name.toLowerCase()));
+  item.aliases = [...new Set(spokenNames[item.id] ?? [])].filter((name) => !own.has(name.toLowerCase()));
+}
+
+writeFileSync(OUTPUT, `${JSON.stringify(items, null, 2)}\n`);
+writeFileSync(IDS, `${JSON.stringify(idsByHebrew, null, 2)}\n`);
+const listed = items.filter((item) => !item.priceRule).length;
+const withPhoto = items.filter((item) => item.photo).length;
+console.log(`${listed} items from ${INPUT} + ${items.length - listed} averaged for dictation → ${OUTPUT}; ${withPhoto} with a picture.`);
