@@ -1541,12 +1541,13 @@
     "category": "greenery",
     "names": {
       "he": "בלה מקנדה",
-      "ru": "«Белла из Канады»",
-      "en": "Bella of Canada"
+      "ru": "Беламканда китайская",
+      "en": "Belamcanda (blackberry lily)"
     },
     "aliases": [],
     "boughtAs": "stem",
-    "purchasePrice": 7
+    "purchasePrice": 7,
+    "photo": "photos/belamcanda.webp"
   },
   {
     "id": "thuja",
