@@ -286,7 +286,9 @@ Each item has:
     to 640 px WebP in `public/photos/` and lists them in `src/data/photos.json`
     (catalog item ID → picture). The app shows the florist's own photo first,
     else the built-in picture, else the letter tile. Pictures are cached by the
-    service worker once seen, so they work offline.
+    service worker once seen, so they work offline. Their addresses carry a
+    fingerprint of the file (`?v=<hash>`, added by `npm run catalog`), so a
+    replaced picture is fetched again instead of the cached old one (v1.0.4).
   - v0.9.0: first 5 pictures in the app for the user to judge.
   - v1.0.0: all 150 pictures in the app (176 of 180 items; 4 plants still to be
     confirmed have none). `npm run catalog` links each item to its picture.
