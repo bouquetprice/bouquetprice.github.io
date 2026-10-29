@@ -18,6 +18,7 @@
 // if that picture is in public/photos/ (npm run photos:app).
 // Note: the built catalog is public (it ships in the app and in the repository).
 
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readSheet } from 'read-excel-file/node';
 
@@ -68,7 +69,14 @@ if (existsSync(PROMPTS)) {
   const imageAt = titles.indexOf('image');
   for (const line of sheet.slice(1)) if (line[rowAt] && line[imageAt]) pictureOfRow.set(Number(line[rowAt]), String(line[imageAt]));
 }
-const photo = (picture) => (picture && existsSync(`public/photos/${picture}.webp`) ? `photos/${picture}.webp` : undefined);
+// The picture's address carries a fingerprint of its content: phones keep pictures once seen
+// (service worker, cache-first), so a replaced picture needs a new address to be fetched again.
+const photo = (picture) => {
+  const file = `public/photos/${picture}.webp`;
+  if (!picture || !existsSync(file)) return undefined;
+  const version = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 8);
+  return `photos/${picture}.webp?v=${version}`;
+};
 
 const rows = readFileSync(INPUT, 'utf8')
   .split('\n')
