@@ -40,11 +40,15 @@ const dryRun = flag('dry-run');
 
 // Framed close: in the app the pictures are small tiles and round thumbnails, so the
 // flower (or leaf) must fill most of the frame, with only a short piece of stem.
+// Realism first: generated flowers tend to come out idealised (perfect symmetry, far more
+// flowers per stem than the plant has), which florists notice at once.
 const prompt = (subject) =>
-  `Close-up studio product photograph for a florist's catalogue: ${subject}. ` +
-  'The flower head or foliage fills most of the square frame, with only a short piece of stem showing at the bottom. ' +
-  'Centred on a pure white seamless background, soft even diffused lighting, a very faint natural shadow, ' +
-  'photorealistic, true-to-life colours, sharp focus. No vase, no wrapping, no hands, no text, no watermark.';
+  `Realistic studio photograph of a real cut stem as sold at a flower market, for a florist's catalogue: ${subject}. ` +
+  'Natural and imperfect: slightly asymmetrical, a realistic, modest number of flowers and buds for this plant, ' +
+  'flowers at different stages of opening, nothing idealised or perfectly symmetrical, nothing added; leaves only where the description has them. ' +
+  'Framed close: the plant fills most of the square frame, with only a short piece of stem at the bottom. ' +
+  'Pure white seamless background, soft even diffused daylight, a very faint natural shadow, true-to-life colours, ' +
+  'sharp focus. No vase, no wrapping, no hands, no text, no watermark.';
 
 function apiKey() {
   if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY.trim();
